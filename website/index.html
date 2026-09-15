@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genshin Impact Grub Themes — Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --bg-color: #09090b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-color); color: #fff; }
+
+        .bg-grid {
+            position: fixed; inset: 0; z-index: -50;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .bg-glow {
+            position: fixed; top: -20%; left: 20%; width: 60%; height: 60%;
+            background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+            z-index: -40; pointer-events: none;
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(24px);
+            transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .glass-card:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.12);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            background: rgba(255,255,255,0.02);
+        }
+        .preview-container img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.4s ease;
+            opacity: 0;
+        }
+        .preview-container img.loaded {
+            opacity: 1;
+        }
+        .glass-card:hover .preview-container img {
+            transform: scale(1.03);
+        }
+
+        /* ─── Skeleton overlay inside preview-container ─── */
+        .skeleton-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 0.75rem;
+            background: linear-gradient(90deg,
+                rgba(255,255,255,0.04) 25%,
+                rgba(255,255,255,0.09) 50%,
+                rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            transition: opacity 0.35s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .skeleton-overlay.hidden-anim {
+            opacity: 0;
+        }
+
+        /* refresh badge shown when background-refresh replaces stale cache */
+        .refresh-badge {
+            position: absolute;
+            top: 0.4rem; right: 0.4rem;
+            background: rgba(16,185,129,0.2);
+            border: 1px solid rgba(16,185,129,0.4);
+            border-radius: 999px;
+            padding: 1px 6px;
+            font-size: 9px;
+            color: #34d399;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .refresh-badge.show {
+            opacity: 1;
+        }
+
+        /* Đổi chiều chạy từ trái sang phải */
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* card-level skeleton (used while GitHub API is loading) */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 0.75rem;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3);
+            backdrop-filter: blur(12px);
+            padding: 0.75rem 1.5rem; border-radius: 0.75rem;
+            color: #34d399; font-size: 0.875rem; font-weight: 500;
+            transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.4s;
+            opacity: 0; z-index: 100; pointer-events: none;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .search-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
+            padding: 0.625rem 1rem 0.625rem 2.75rem;
+            color: #fff;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            width: 100%;
+        }
+        .search-input::placeholder { color: #71717a; }
+        .search-input:focus {
+            border-color: rgba(16,185,129,0.5);
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        .lightbox-overlay {
+            position: fixed; inset: 0; z-index: 90;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox-overlay.active {
+            opacity: 1; pointer-events: all;
+        }
+        .lightbox-overlay img {
+            max-width: 90vw; max-height: 85vh;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+        }
+
+        .dl-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .dl-btn::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(16,185,129,0.15), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+        .dl-btn:hover::after {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/5 backdrop-blur-md bg-[#09090b]/70">
+        <div class="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <i data-lucide="monitor" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+                <span class="text-sm font-semibold tracking-tight">Genshin Grub Themes</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://github.com/kyle2910/GenshinGrubThemes" target="_blank"
+                   class="flex items-center gap-2 text-xs text-zinc-400 hover:text-white transition-colors duration-300">
+                    <i data-lucide="github" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">GitHub</span>
+                </a>
+                <a href="https://github.com/kyle2910/GenshinGrubThemes/releases" target="_blank"
+                   class="flex items-center gap-2 bg-white text-black text-xs font-medium px-3 py-1.5 rounded-lg hover:scale-105 active:scale-[0.98] transition-all duration-300 shadow-[0_0_15px_-3px_rgba(255,255,255,0.2)]">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Releases</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="pt-28 pb-12 md:pt-36 md:pb-16 px-4 md:px-6">
+        <div class="max-w-7xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1 mb-6">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[10px] font-medium uppercase tracking-widest text-emerald-400" id="theme-count-badge">Loading themes…</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tighter leading-[1.1] mb-4"
+                style="background: linear-gradient(to bottom, #fff, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Genshin Impact<br>GRUB Themes
+            </h1>
+            <p class="text-base md:text-lg font-light text-zinc-400 leading-relaxed max-w-xl mx-auto mb-8">
+                A collection of beautiful GRUB2 boot themes inspired by Genshin Impact characters. Preview and download any theme below.
+            </p>
+            <div class="flex items-center justify-center gap-3 text-xs text-zinc-500">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="heart" class="w-3.5 h-3.5 text-rose-400/60"></i>
+                    Credits: <a href="https://kylex.pages.dev/" target="_blank" class="text-zinc-400 hover:text-white transition-colors">Kyle</a>
+                </span>
+                <span class="text-zinc-700">•</span>
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="git-fork" class="w-3.5 h-3.5 text-emerald-400/60"></i>
+                    Fork of <a href="https://github.com/voidlhf/StarRailGrubThemes" target="_blank" class="text-zinc-400 hover:text-white transition-colors">StarRailGrubThemes</a>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toolbar -->
+    <section class="px-4 md:px-6 mb-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div class="relative flex-1 max-w-md">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"></i>
+                    <input type="text" id="search-input" class="search-input" placeholder="Search theme name…" />
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-grid-compact" title="Compact grid"
+                        class="p-2 rounded-lg border border-white/10 text-zinc-500 hover:text-white hover:border-white/20 transition-all duration-300">
+                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btn-grid-large" title="Large grid"
+                        class="p-2 rounded-lg border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/15 transition-all duration-300">
+                        <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Theme Grid -->
+    <main class="px-4 md:px-6 pb-24">
+        <div class="max-w-7xl mx-auto">
+            <div id="theme-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                <div class="glass-card rounded-2xl p-4 fade-in-up" style="animation-delay:0ms">
+                    <div class="skeleton w-full aspect-video mb-4"></div>
+                    <div class="skeleton h-5 w-2/3 mb-2"></div>
+                    <div class="skeleton h-4 w-1/3"></div>
+                </div>
+                <div class="glass-card rounded-2xl p-4 fade-in-up" style="animation-delay:80ms">
+                    <div class="skeleton w-full aspect-video mb-4"></div>
+                    <div class="skeleton h-5 w-2/3 mb-2"></div>
+                    <div class="skeleton h-4 w-1/3"></div>
+                </div>
+                <div class="glass-card rounded-2xl p-4 fade-in-up" style="animation-delay:160ms">
+                    <div class="skeleton w-full aspect-video mb-4"></div>
+                    <div class="skeleton h-5 w-2/3 mb-2"></div>
+                    <div class="skeleton h-4 w-1/3"></div>
+                </div>
+            </div>
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
+                <i data-lucide="search-x" class="w-12 h-12 text-zinc-600 mb-4"></i>
+                <p class="text-zinc-400 text-lg font-light mb-1">No themes found</p>
+                <p class="text-zinc-600 text-sm">Try a different search term</p>
+            </div>
+            <div id="error-state" class="hidden flex-col items-center justify-center py-20 text-center">
+                <i data-lucide="wifi-off" class="w-12 h-12 text-zinc-600 mb-4"></i>
+                <p class="text-zinc-400 text-lg font-light mb-1">Failed to load themes</p>
+                <p class="text-zinc-600 text-sm mb-4">Could not fetch from GitHub API</p>
+                <button id="btn-retry" class="bg-white text-black text-xs font-medium px-4 py-2 rounded-lg hover:scale-105 active:scale-[0.98] transition-all">
+                    Retry
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-8 px-4 md:px-6">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-600">
+            <p>Genshin Impact GRUB Themes — Preview Page - © All rights reserved by HoYoverse. Other properties belong to their respective owners.</p>
+            <p>Images & design by <a href="https://github.com/voidlhf" target="_blank" class="text-zinc-400 hover:text-white transition-colors">voidlhf</a> · Themes by <a href="https://github.com/kyle2910" target="_blank" class="text-zinc-400 hover:text-white transition-colors">kyle2910</a></p>
+        </div>
+    </footer>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="" />
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ─── Config ───
+        const API_URL = 'https://api.github.com/repos/kyle2910/GenshinGrubThemes/contents/assets/themes/GenshinGrubThemes';
+        const RAW_BASE = 'https://raw.githubusercontent.com/kyle2910/GenshinGrubThemes/master/assets/themes/GenshinGrubThemes';
+        const GITHUB_TREE_BASE = 'https://github.com/kyle2910/GenshinGrubThemes/tree/master/assets/themes/GenshinGrubThemes';
+        const DL_DIR_BASE = 'https://download-directory.github.io';
+
+        // Cache config
+        const CACHE_DB_NAME  = 'GenshinGrubCache';
+        const CACHE_DB_VER   = 1;
+        const CACHE_STORE    = 'images';
+        const CACHE_TTL_MS   = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+        let allThemes   = [];
+        let gridMode    = 'large';
+        let currentQuery = '';
+
+        // Track which images were freshly fetched (skip in bg-refresh)
+        const freshlyLoaded = new Set();
+
+        // ─── DOM ───
+        const grid            = document.getElementById('theme-grid');
+        const searchInput     = document.getElementById('search-input');
+        const themeCountBadge = document.getElementById('theme-count-badge');
+        const emptyState      = document.getElementById('empty-state');
+        const errorState      = document.getElementById('error-state');
+        const lightbox        = document.getElementById('lightbox');
+        const lightboxImg     = document.getElementById('lightbox-img');
+        const toastEl         = document.getElementById('toast');
+        const btnGridCompact  = document.getElementById('btn-grid-compact');
+        const btnGridLarge    = document.getElementById('btn-grid-large');
+        const btnRetry        = document.getElementById('btn-retry');
+
+        // ─── Toast ───
+        let toastTimeout;
+        function showToast(msg) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toastEl.classList.remove('show'), 2500);
+        }
+
+        // ─── Lightbox ───
+        function openLightbox(src, name) {
+            lightboxImg.src = src;
+            lightboxImg.alt = name + ' preview';
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+        // ─── Copy install command ───
+        function copyInstallCmd(name) {
+            const cmd = `GRUB_THEME="/usr/share/grub/themes/${name}/theme.txt"`;
+            navigator.clipboard.writeText(cmd).then(() => {
+                showToast(`Copied GRUB_THEME path for "${name}"`);
+            }).catch(() => {
+                showToast('Copy failed — please copy manually');
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  IndexedDB Cache Layer
+        // ═══════════════════════════════════════════════════════════
+        let db = null;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                if (db) return resolve(db);
+                const req = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VER);
+                req.onupgradeneeded = e => {
+                    const d = e.target.result;
+                    if (!d.objectStoreNames.contains(CACHE_STORE)) {
+                        // keyPath = url, index on cachedAt for bg-refresh ordering
+                        const store = d.createObjectStore(CACHE_STORE, { keyPath: 'url' });
+                        store.createIndex('cachedAt', 'cachedAt', { unique: false });
+                    }
+                };
+                req.onsuccess = e => { db = e.target.result; resolve(db); };
+                req.onerror   = e => reject(e.target.error);
+            });
+        }
+
+        async function cacheGet(url) {
+            try {
+                const d = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx  = d.transaction(CACHE_STORE, 'readonly');
+                    const req = tx.objectStore(CACHE_STORE).get(url);
+                    req.onsuccess = e => resolve(e.target.result || null);
+                    req.onerror   = e => reject(e.target.error);
+                });
+            } catch { return null; }
+        }
+
+        async function cacheSet(url, blob) {
+            try {
+                const d = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx  = d.transaction(CACHE_STORE, 'readwrite');
+                    const req = tx.objectStore(CACHE_STORE).put({ url, blob, cachedAt: Date.now() });
+                    req.onsuccess = () => resolve(true);
+                    req.onerror   = e => reject(e.target.error);
+                });
+            } catch { return false; }
+        }
+
+        // Get all cached entries sorted by cachedAt ascending (oldest first)
+        async function cacheGetAllSorted() {
+            try {
+                const d = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx      = d.transaction(CACHE_STORE, 'readonly');
+                    const idx     = tx.objectStore(CACHE_STORE).index('cachedAt');
+                    const req     = idx.getAll();
+                    req.onsuccess = e => resolve(e.target.result || []);
+                    req.onerror   = e => reject(e.target.error);
+                });
+            } catch { return []; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Smart image loader
+        //  Returns a blob URL from cache (if fresh) or fetched network
+        //  Sets freshlyLoaded flag if fetched from network
+        // ═══════════════════════════════════════════════════════════
+        async function loadImage(url) {
+            const entry = await cacheGet(url);
+            if (entry && (Date.now() - entry.cachedAt) < CACHE_TTL_MS) {
+                // Serve from cache immediately — do NOT mark as freshlyLoaded
+                return { blobUrl: URL.createObjectURL(entry.blob), fromCache: true, cachedAt: entry.cachedAt };
+            }
+            // Fetch from network
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            await cacheSet(url, blob);
+            freshlyLoaded.add(url);
+            return { blobUrl: URL.createObjectURL(blob), fromCache: false, cachedAt: Date.now() };
+        }
+
+        // Apply blob URL to an <img> element, hiding skeleton when done
+        function applyImage(imgEl, skeletonEl, blobUrl, markRefresh = false) {
+            imgEl.onload = () => {
+                imgEl.classList.add('loaded');
+                // Fade out skeleton
+                skeletonEl.classList.add('hidden-anim');
+                setTimeout(() => skeletonEl.remove(), 400);
+                if (markRefresh) {
+                    const badge = imgEl.closest('.preview-container')?.querySelector('.refresh-badge');
+                    if (badge) {
+                        badge.classList.add('show');
+                        setTimeout(() => badge.classList.remove('show'), 3000);
+                    }
+                }
+            };
+            imgEl.onerror = () => {
+                skeletonEl.classList.add('hidden-anim');
+                setTimeout(() => skeletonEl.remove(), 400);
+                imgEl.closest('.preview-container').innerHTML =
+                    '<div class="flex items-center justify-center h-full text-zinc-600 text-xs">Image not found</div>';
+            };
+            imgEl.src = blobUrl;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Load queue — sequential with search-keyword priority
+        // ═══════════════════════════════════════════════════════════
+        let loadQueueAbort = null; // AbortController token to cancel a running queue
+
+        function buildQueue(themes, keyword) {
+            if (!keyword) return [...themes];
+            const kw  = keyword.toLowerCase();
+            const pri = themes.filter(t => t.name.toLowerCase().includes(kw));
+            const rest = themes.filter(t => !t.name.toLowerCase().includes(kw));
+            return [...pri, ...rest];
+        }
+
+        // Render cards first (skeleton state), then trigger sequential loading
+        function renderThemes(themes, triggerLoad = true) {
+            grid.innerHTML = '';
+
+            if (themes.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            themes.forEach((theme, i) => {
+                const imgUrl         = `${RAW_BASE}/${theme.name}/background.png`;
+                const githubFolderUrl = `${GITHUB_TREE_BASE}/${theme.name}`;
+                const downloadUrl    = `${DL_DIR_BASE}?url=${encodeURIComponent(githubFolderUrl)}`;
+                const delay          = Math.min(i * 60, 600);
+
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl p-4 fade-in-up';
+                card.style.animationDelay = `${delay}ms`;
+                card.dataset.themeName = theme.name;
+
+                card.innerHTML = `
+                    <div class="preview-container cursor-zoom-in" onclick="openLightbox(this.querySelector('img').src,'${theme.name}')">
+                        <div class="skeleton-overlay"></div>
+                        <div class="refresh-badge">↑ updated</div>
+                        <img alt="${theme.name}" />
+                    </div>
+                    <div class="mt-4 flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <h3 class="text-base font-medium tracking-tight text-white truncate">${theme.name}</h3>
+                            <p class="text-[11px] text-zinc-500 mt-0.5 font-light">${theme.name} GRUB theme</p>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <a href="${downloadUrl}" target="_blank" rel="noopener" title="Download theme folder"
+                               class="dl-btn p-2 rounded-lg text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                            </a>
+                            <button onclick="copyInstallCmd('${theme.name}')" title="Copy GRUB_THEME path"
+                                class="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-all duration-200">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                            <a href="${githubFolderUrl}" target="_blank" rel="noopener" title="View on GitHub"
+                               class="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-all duration-200">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            lucide.createIcons();
+
+            if (triggerLoad) {
+                startLoadQueue(themes);
+            }
+        }
+
+        // ─── Sequential load queue with priority ───
+        async function startLoadQueue(themes) {
+            // Cancel any running queue
+            if (loadQueueAbort) loadQueueAbort.cancelled = true;
+            const token = { cancelled: false };
+            loadQueueAbort = token;
+
+            const queue = buildQueue(themes, currentQuery);
+
+            for (const theme of queue) {
+                if (token.cancelled) return;
+
+                const imgUrl   = `${RAW_BASE}/${theme.name}/background.png`;
+                const card     = grid.querySelector(`[data-theme-name="${theme.name}"]`);
+                if (!card) continue;
+
+                const imgEl    = card.querySelector('img');
+                const skelEl   = card.querySelector('.skeleton-overlay');
+                if (!imgEl || !skelEl) continue;
+
+                try {
+                    const { blobUrl } = await loadImage(imgUrl);
+                    if (token.cancelled) return;
+                    applyImage(imgEl, skelEl, blobUrl);
+                } catch {
+                    if (!token.cancelled && skelEl.parentNode) {
+                        skelEl.classList.add('hidden-anim');
+                        setTimeout(() => skelEl.remove && skelEl.remove(), 400);
+                        if (imgEl.closest) {
+                            const pc = imgEl.closest('.preview-container');
+                            if (pc) pc.innerHTML = '<div class="flex items-center justify-center h-full text-zinc-600 text-xs">Image not found</div>';
+                        }
+                    }
+                }
+            }
+
+            // All primary loads done — start background refresh of stale/cached images
+            if (!token.cancelled) {
+                scheduleBackgroundRefresh(themes);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Background refresh pass
+        //  Re-fetches images that were served from cache (oldest first)
+        //  Skips images that were freshly fetched this session
+        // ═══════════════════════════════════════════════════════════
+        async function scheduleBackgroundRefresh(themes) {
+            // Small delay so UI stays responsive first
+            await delay(1500);
+
+            const cached = await cacheGetAllSorted(); // sorted oldest → newest
+            if (!cached.length) return;
+
+            // Only refresh those that belong to this theme set and were NOT freshly loaded
+            const themeUrlSet = new Set(themes.map(t => `${RAW_BASE}/${t.name}/background.png`));
+            const toRefresh   = cached.filter(entry =>
+                themeUrlSet.has(entry.url) && !freshlyLoaded.has(entry.url)
+            );
+
+            if (!toRefresh.length) return;
+
+            for (const entry of toRefresh) {
+                // Check TTL — if still fresh, no need to re-fetch
+                if ((Date.now() - entry.cachedAt) < CACHE_TTL_MS) continue;
+
+                try {
+                    const res = await fetch(entry.url);
+                    if (!res.ok) continue;
+                    const blob = await res.blob();
+                    await cacheSet(entry.url, blob);
+
+                    // Find matching card and update its img
+                    const themeName = decodeThemeNameFromUrl(entry.url);
+                    const card = grid.querySelector(`[data-theme-name="${themeName}"]`);
+                    if (!card) continue;
+                    const imgEl = card.querySelector('img');
+                    if (!imgEl) continue;
+
+                    const newBlobUrl = URL.createObjectURL(blob);
+                    // Fade swap
+                    imgEl.style.transition = 'opacity 0.4s ease';
+                    imgEl.style.opacity = '0';
+                    await delay(420);
+                    imgEl.src = newBlobUrl;
+                    imgEl.onload = () => {
+                        imgEl.style.opacity = '1';
+                        // Show refresh badge
+                        const badge = card.querySelector('.refresh-badge');
+                        if (badge) {
+                            badge.classList.add('show');
+                            setTimeout(() => badge.classList.remove('show'), 3000);
+                        }
+                    };
+                } catch { /* silently skip */ }
+            }
+        }
+
+        function decodeThemeNameFromUrl(url) {
+            // url = RAW_BASE + '/' + name + '/background.png'
+            const after = url.replace(RAW_BASE + '/', '');
+            return after.replace('/background.png', '');
+        }
+
+        function delay(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+
+        // ─── Grid mode toggle ───
+        function setGridMode(mode) {
+            gridMode = mode;
+            if (mode === 'compact') {
+                grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5';
+                btnGridCompact.classList.add('border-emerald-500/30', 'text-emerald-400', 'bg-emerald-500/10');
+                btnGridCompact.classList.remove('border-white/10', 'text-zinc-500');
+                btnGridLarge.classList.remove('border-emerald-500/30', 'text-emerald-400', 'bg-emerald-500/10');
+                btnGridLarge.classList.add('border-white/10', 'text-zinc-500');
+            } else {
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8';
+                btnGridLarge.classList.add('border-emerald-500/30', 'text-emerald-400', 'bg-emerald-500/10');
+                btnGridLarge.classList.remove('border-white/10', 'text-zinc-500');
+                btnGridCompact.classList.remove('border-emerald-500/30', 'text-emerald-400', 'bg-emerald-500/10');
+                btnGridCompact.classList.add('border-white/10', 'text-zinc-500');
+            }
+        }
+
+        btnGridCompact.addEventListener('click', () => setGridMode('compact'));
+        btnGridLarge.addEventListener('click', () => setGridMode('large'));
+
+        // ─── Search ───
+        let searchDebounce;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                currentQuery = searchInput.value.trim().toLowerCase();
+                const filtered = allThemes.filter(t => t.name.toLowerCase().includes(currentQuery));
+                // Re-render and trigger load queue with new priority
+                renderThemes(filtered, true);
+            }, 180);
+        });
+
+        // ─── Fetch themes from GitHub API ───
+        async function fetchThemes() {
+            errorState.classList.add('hidden');
+            errorState.classList.remove('flex');
+            grid.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const sk = document.createElement('div');
+                sk.className = 'glass-card rounded-2xl p-4 fade-in-up';
+                sk.style.animationDelay = `${i * 80}ms`;
+                sk.innerHTML = `<div class="skeleton w-full aspect-video mb-4"></div><div class="skeleton h-5 w-2/3 mb-2"></div><div class="skeleton h-4 w-1/3"></div>`;
+                grid.appendChild(sk);
+            }
+
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error(`API returned ${res.status}`);
+                const data = await res.json();
+                allThemes = data.filter(item => item.type === 'dir');
+                allThemes.sort((a, b) => a.name.localeCompare(b.name));
+                themeCountBadge.textContent = `${allThemes.length} themes available`;
+                currentQuery = searchInput.value.trim().toLowerCase();
+                renderThemes(allThemes, true);
+            } catch (err) {
+                console.error('Failed to fetch themes:', err);
+                grid.innerHTML = '';
+                errorState.classList.remove('hidden');
+                errorState.classList.add('flex');
+                themeCountBadge.textContent = 'Error loading themes';
+            }
+        }
+
+        btnRetry.addEventListener('click', fetchThemes);
+
+        // ─── Init ───
+        fetchThemes();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
