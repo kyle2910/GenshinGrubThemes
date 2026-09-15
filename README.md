@@ -2,7 +2,7 @@
 A pack of GRUB2 themes for Genshin Impact
 
 ![banner](preview/Kinich.png)
-[Preview all themes](https://kylex.pages.dev/GenshinGrubThemes)
+[Preview all themes](https://genshingrubthemes.pages.dev/)
 
 ## Notes:
 
@@ -18,13 +18,15 @@ I only used her Figma design and existing theme structure as a base to create th
 Thanks [voidlhf](https://github.com/voidlhf/)
 
 ## Design File & Image Resources
+(From [voidlhf](https://github.com/voidlhf))
+
 [Honkai: Star Rail Grub Theme Design File (Figma Design File)](https://www.figma.com/community/file/1354356022337074054/honkai-star-rail-grub-theme-design-file)
 
 [StarRailRes (Image Resources)](https://github.com/Mar-7th/StarRailRes)
 
 
 ## Theme Description
-> [Preview all themes and download here](https://kylex.pages.dev/GenshinGrubThemes)
+> [Preview all themes and download here](https://genshingrubthemes.pages.dev/)
 
 ## Installation
 Using the `Kinich` theme as an example
